@@ -1,13 +1,19 @@
 import uvicorn
+import asyncio
 from fastapi import FastAPI
 from app.routers import get_router, post_router
+from app.data_base.data_base import create_tables
 
 app = FastAPI()
 
 app.include_router(get_router)
 app.include_router(post_router)
 
+async def create_tables_run():
+    await create_tables()
+
 if __name__ == "__main__":
+    # asyncio.run(create_tables_run())
     uvicorn.run(
         "run:app",  # файл для запуска сервера
         host="0.0.0.0",

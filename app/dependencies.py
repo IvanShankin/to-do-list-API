@@ -10,9 +10,8 @@ from sqlalchemy import select, update
 from dotenv import load_dotenv
 from typing import List
 
-from app.config import ACCESS_TOKEN_EXPIRE_MINUTES
+from app.data_base.data_base import get_db
 from app.models.models import Project, Task
-from app.data_base.data_base import session_local
 from app.schemas import TokenData
 from app.models import User
 
@@ -20,17 +19,11 @@ from app.models import User
 load_dotenv()  # Загружает переменные из .env
 # Настройки аутентификации
 SECRET_KEY = os.getenv('SECRET_KEY')
+ACCESS_TOKEN_EXPIRE_MINUTES = float(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
 ALGORITHM = "HS256"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-async def get_db():
-    db = session_local()
-    try:
-        yield db
-    finally:
-        await db.close()
 
 # создание токена для пользователя
 def create_access_token(data: dict, expires_delta: timedelta = None):

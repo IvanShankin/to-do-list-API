@@ -5,18 +5,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from typing import List, Optional
 
-from app.dependencies import get_db, get_current_user, check_overdue_projects, check_overdue_tasks
+from app.data_base.data_base import get_db
+from app.dependencies import get_current_user, check_overdue_projects, check_overdue_tasks
 from app.models.models import User, Project, Task
 from app.schemas.response import ProjectResponse, TaskResponse, UserResponse
 
 router = APIRouter()
 
-
-@router.get("/users/me/", response_model=UserResponse)
-async def read_users_me(current_user: User = Depends(get_current_user)):
+@router.get("/user_me/", response_model=UserResponse)
+async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-@router.get('/get_project/', response_model= List[ProjectResponse])
+@router.get('/get_projects/', response_model= List[ProjectResponse])
 async def get_project(
         project_id: Optional[int] = Query(None, description="ID проекта"),
         current_user: User = Depends(get_current_user),
@@ -53,13 +53,14 @@ async def get_project(
 
     return update_projects
 
-@router.get('/get_task/', response_model=List[TaskResponse])
-async def get_task(
+@router.get('/get_tasks/', response_model=List[TaskResponse])
+async def get_tasks(
         project_id: Optional[int] = Query(None, description="ID проекта"),
         task_id: Optional[int] = Query(None, description="ID задачи"),
         current_user: User = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
+    """Если передать id проекта, то вернутся все задачи по этому проекту. """
     if (not task_id is None) and (not project_id is None): # если передали два параметра
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

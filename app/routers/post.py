@@ -6,16 +6,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, HTTPException, status, APIRouter, Query
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.dependencies import get_db, get_current_user, check_overdue_projects, check_overdue_tasks
+from app.data_base.data_base import get_db
+from app.dependencies import check_overdue_projects, check_overdue_tasks
 from app.models.models import User, Project, Status, Task
 from app.schemas.request import RefreshTokenRequest, ProjectCreate, TaskCreate, UserCreate, UpdateProject, UpdateTask
 from app.schemas.response import TaskResponse, Token, ProjectResponse, UserResponse, DeleteProjectResponse, DeleteTaskResponse
-from app.dependencies import (hash_password, verify_password, get_db, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES,
-                              create_access_token, SECRET_KEY, ALGORITHM, ensure_utc,   JWTError, jwt)
+from app.dependencies import (hash_password, verify_password, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES,
+                              create_access_token, SECRET_KEY, ALGORITHM, ensure_utc, JWTError, jwt)
 
 router = APIRouter()
 
-@router.post("/new_user/user", response_model=UserResponse)
+@router.post("/new_user", response_model=UserResponse)
 async def create_user(user: UserCreate,
                       db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(cast(User.login == user.login, Boolean)))
@@ -54,7 +55,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     if not db_user or not verify_password(form_data.password, db_user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Некорректный user_name или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -108,7 +109,7 @@ async def create_project(
         new_position = 0
 
     status_result = await db.execute(select(Status).where(cast(Status.status_id == 0, Boolean)))
-    status_from_db = status_result.scalar_one()
+    status_from_db = status_result.scalar_one_or_none()
 
     if project_data.desired_completion_date is None:
         dt_completion = None
@@ -129,7 +130,7 @@ async def create_project(
     new_project.status = status_from_db  # Устанавливаем уже загруженный статус через relationship. ЭТО ДЕЛАЕТСЯ ЧЕРЕЗ ПОЛЕ status
     return new_project
 
-@router.post('/create_tasks/', response_model=TaskResponse)
+@router.post('/create_task', response_model=TaskResponse)
 async def create_task(
     task_data: TaskCreate,
     current_user: User = Depends(get_current_user),
@@ -157,7 +158,7 @@ async def create_task(
         new_position = 0
 
     status_result = await db.execute(select(Status).where(cast(Status.status_id == 0, Boolean)))
-    status_from_db = status_result.scalar_one()
+    status_from_db = status_result.scalar_one_or_none()
 
     if task_data.desired_completion_date is None:
         dt_completion = None
@@ -180,7 +181,7 @@ async def create_task(
     new_task.status = status_from_db
     return new_task
 
-@router.post('/update_project/', response_model=ProjectResponse)
+@router.post('/update_project', response_model=ProjectResponse)
 async def update_project(
     project_data: UpdateProject,
     current_user: User = Depends(get_current_user),
@@ -240,7 +241,7 @@ async def update_project(
                 )
 
     # Обновляем только переданные поля
-    update_data = project_data.dict(exclude_unset=True)
+    update_data = project_data.model_dump(exclude_unset=True)
     for field, value in update_data.items(): # получаем словарь из переданных данных
         if field != 'project_id' and hasattr(project, field): # войдём если в БД есть такой столбец как ключ у field
             setattr(project, field, value) # Устанавливаем новое значение для атрибута объекта
@@ -260,12 +261,12 @@ async def update_project(
     status_result = await db.execute(select(Status).where(cast(
         Status.status_id == project.status_id, Boolean
     )))
-    status_from_db = status_result.scalar_one()
+    status_from_db = status_result.scalar_one_or_none()
     project.status = status_from_db
     return project
 
 
-@router.post('/update_task/', response_model=TaskResponse)
+@router.post('/update_task', response_model=TaskResponse)
 async def update_task(
     task_data: UpdateTask,
     current_user: User = Depends(get_current_user),
@@ -323,7 +324,7 @@ async def update_task(
                 )
 
     # Обновляем только переданные поля
-    update_data = task_data.dict(exclude_unset=True)
+    update_data = task_data.model_dump(exclude_unset=True)
     for field, value in update_data.items(): # получаем словарь из переданных данных
         if field != 'task_id' and hasattr(task, field): # войдём если в БД есть такой столбец как ключ у field
             setattr(task, field, value) # Устанавливаем новое значение для атрибута объекта
@@ -343,12 +344,12 @@ async def update_task(
     status_result = await db.execute(select(Status).where(cast(
         Status.status_id == task.status_id, Boolean
     )))
-    status_from_db = status_result.scalar_one()
+    status_from_db = status_result.scalar_one_or_none()
     task.status = status_from_db
     return task
 
 
-@router.post('/delete_project/', response_model=DeleteProjectResponse)
+@router.post('/delete_project', response_model=DeleteProjectResponse)
 async def delete_project(
         project_id: int = Query(..., description="ID проекта"),
         complete_remove: bool = Query(False, description="Флаг полного удаления с БД"),
@@ -405,7 +406,7 @@ async def delete_project(
     )
     return new_delete_project
 
-@router.post('/delete_task/', response_model=DeleteTaskResponse)
+@router.post('/delete_task', response_model=DeleteTaskResponse)
 async def delete_task(
         task_id: int = Query(..., description="ID задачи"),
         complete_remove: bool = Query(False, description="Флаг полного удаления с БД"),
@@ -458,7 +459,7 @@ async def delete_task(
     return new_delete_task
 
 
-@router.post('/recover_project/', response_model=ProjectResponse)
+@router.post('/recover_project', response_model=ProjectResponse)
 async def recover_project(
         project_id: int = Query(..., description="ID проекта"),
         current_user: User = Depends(get_current_user),
@@ -530,7 +531,7 @@ async def recover_project(
 
     return new_project[0]
 
-@router.post('/recover_task/', response_model=TaskResponse)
+@router.post('/recover_task', response_model=TaskResponse)
 async def recover_task(
         task_id: int = Query(..., description="ID задачи"),
         current_user: User = Depends(get_current_user),
