@@ -118,6 +118,11 @@ POST /create_project
   "desired_completion_date": "2023-12-31T00:00:00Z"
 }
 ```
+## Тестирование
+для запуска теста выполните 
+```bash
+pytest tests/
+```
 
 ## Особенности
 
