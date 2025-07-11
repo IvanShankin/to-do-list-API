@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 
-from app.data_base.data_base import Base
+from app.data_base.base import Base
 
 # этот файл описывает каждую таблицу в БД
 

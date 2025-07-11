@@ -1,12 +1,9 @@
 import datetime
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 import pytest
 from httpx import AsyncClient, ASGITransport
 
-from pyasn1.type.univ import Boolean
-from sqlalchemy import select, update, cast, Boolean
-from app.models.models import User, Project, Task
 from app.run import app
 
 
