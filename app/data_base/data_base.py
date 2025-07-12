@@ -43,7 +43,7 @@ async def create_database():
     """Создает базу данных (если она не существует) и все таблицы в ней."""
     # Сначала подключаемся к серверу PostgreSQL без указания конкретной базы
     engine = create_async_engine(POSTGRES_SERVER_URL, isolation_level="AUTOCOMMIT")
-
+    print('\n\n\n\n\n\n\n\n' + DB_NAME + '\n\n\n\n\n\n\n\n')
     try:
         # Проверяем существование базы данных и создаем если ее нет
         async with engine.connect() as conn:

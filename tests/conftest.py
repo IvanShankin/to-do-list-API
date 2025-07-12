@@ -1,4 +1,5 @@
 import os
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete, select, cast, func, Boolean
 from datetime import datetime, timezone, timedelta
@@ -7,15 +8,21 @@ from dotenv import load_dotenv
 from app.dependencies import hash_password
 from app.models.models import User, Project, Status, Task
 from app.dependencies import create_access_token
-from app.data_base.data_base import get_db
-from app.dependencies import ensure_utc
-
-import pytest
-import pytest_asyncio  # Используем специальный декоратор
+from app.data_base.data_base import get_db, create_database
 
 load_dotenv()  # Загружает переменные из .env
 ACCESS_TOKEN_EXPIRE_MINUTES = float(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))
 MODE = os.getenv('MODE')
+
+# эти импорты необходимо указывать именно тут для загрузки .test.env
+import pytest_asyncio
+
+@pytest_asyncio.fixture(scope='session', autouse=True)
+async def create_database_fixture():
+    if MODE != "TEST":
+        raise ValueError("Используется основная БД!")
+
+    await create_database()
 
 @pytest_asyncio.fixture
 async def db_session()->AsyncSession:
