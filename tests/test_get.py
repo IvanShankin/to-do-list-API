@@ -47,7 +47,7 @@ class TestGetRequest:
             assert data[0]['project_id'] == create_project['project_id']
             assert data[0]['title'] == create_project['title']
             assert data[0]['description'] == create_project['description']
-            assert data[0]['status']['status_id'] == 0
+            assert data[0]['status']['status_id'] == 1
             assert data[0]['status']['name'] == 'in_progress'
             assert compare_dates(data[0]['created_date'], create_project['created_date'])
             assert compare_dates(data[0]['desired_completion_date'], create_project['desired_completion_date'])
@@ -72,7 +72,7 @@ class TestGetRequest:
             assert data
             assert data[0]['user_id'] == create_task['data_user']['user_id']
             assert data[0]['project_id'] == create_task['project_id']
-            assert data[0]['status']['status_id'] == 0
+            assert data[0]['status']['status_id'] == 1
             assert data[0]['status']['name'] == 'in_progress'
             assert data[0]['project_id'] == create_task['project_id']
             assert data[0]['position_index'] == create_task['position_index']
@@ -95,7 +95,7 @@ class TestGetRequest:
             assert data_second
             assert data_second[0]['user_id'] == create_task['data_user']['user_id']
             assert data_second[0]['project_id'] == create_task['project_id']
-            assert data_second[0]['status']['status_id'] == 0
+            assert data_second[0]['status']['status_id'] == 1
             assert data_second[0]['status']['name'] == 'in_progress'
             assert data_second[0]['project_id'] == create_task['project_id']
             assert data_second[0]['position_index'] == create_task['position_index']

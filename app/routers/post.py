@@ -99,7 +99,7 @@ async def create_project(
 ):
 
     query = select(func.max(Project.position_index)).where(cast((
-        Project.user_id == current_user.user_id) & (Project.status_id != 3), Boolean
+        Project.user_id == current_user.user_id) & (Project.status_id != 4), Boolean
     ))
     result = await db.execute(query)
     max_position = result.scalar_one_or_none()
@@ -108,7 +108,7 @@ async def create_project(
     else:  # если ранее в БД не было задач у этого проекта
         new_position = 0
 
-    status_result = await db.execute(select(Status).where(cast(Status.status_id == 0, Boolean)))
+    status_result = await db.execute(select(Status).where(cast(Status.status_id == 1, Boolean)))
     status_from_db = status_result.scalar_one_or_none()
 
     if project_data.desired_completion_date is None:
@@ -146,7 +146,7 @@ async def create_task(
 
     result = await db.execute(select(func.max(Task.position_index)).where(cast(
         (Task.user_id == current_user.user_id) &
-        (Task.status_id != 3) &                   # если не удалён
+        (Task.status_id != 4) &                   # если не удалён
         (Task.project_id == task_data.project_id),# ищем по tasks который так же находятся в этом проекте
         Boolean
     )))
@@ -157,7 +157,7 @@ async def create_task(
     else:  # если ранее в БД не было задач у этого проекта
         new_position = 0
 
-    status_result = await db.execute(select(Status).where(cast(Status.status_id == 0, Boolean)))
+    status_result = await db.execute(select(Status).where(cast(Status.status_id == 1, Boolean)))
     status_from_db = status_result.scalar_one_or_none()
 
     if task_data.desired_completion_date is None:
@@ -188,7 +188,7 @@ async def update_project(
     db: AsyncSession = Depends(get_db)
 ):
     query = await db.execute(select(Project).where(cast(
-        (Project.status_id != 3) &    # если не удалён
+        (Project.status_id != 4) &    # если не удалён
         (Project.user_id == current_user.user_id) &
         (Project.project_id == project_data.project_id), Boolean
     )))
@@ -203,7 +203,7 @@ async def update_project(
     if project_data.position_index is not None:
         query = await db.execute(select(func.max(Project.position_index)).where(cast(
             (Project.user_id == current_user.user_id) &
-            (Project.status_id != 3), Boolean
+            (Project.status_id != 4), Boolean
         ))) or 0    # будет 0 если проектов нет (такого не должно произойти )
         max_index = query.scalar_one_or_none()
 
@@ -221,7 +221,7 @@ async def update_project(
                     update(Project)
                     .where(
                         (Project.user_id == current_user.user_id) &
-                        (Project.status_id != 3) &              # если не удалён
+                        (Project.status_id != 4) &              # если не удалён
                         (Project.position_index > old_index) &  # > old_index (исключаем сам элемент)
                         (Project.position_index <= new_index)   # <= new_index (включаем новую позицию)
                     )
@@ -233,7 +233,7 @@ async def update_project(
                     update(Project)
                     .where(
                         (Project.user_id == current_user.user_id) &
-                        (Project.status_id != 3) &              # если не удалён
+                        (Project.status_id != 4) &              # если не удалён
                         (Project.position_index >= new_index) & # >= new_index (включаем новую позицию)
                         (Project.position_index < old_index)    # < old_index (исключаем сам элемент)
                     )
@@ -250,10 +250,10 @@ async def update_project(
     project.updated_date = datetime.now(timezone.utc)
 
     if project.desired_completion_date and project.desired_completion_date < datetime.now(timezone.utc):
-        project.status_id = 2  # Просрочен
+        project.status_id = 3  # Просрочен
 
     if project.actual_completion_date:
-        project.status_id = 1 # Завершен
+        project.status_id = 2 # Завершен
 
     await db.commit()
     await db.refresh(project)
@@ -273,7 +273,7 @@ async def update_task(
     db: AsyncSession = Depends(get_db)
 ):
     query = await db.execute(select(Task).where(cast(
-        (Task.status_id != 3) &    # если не удалён
+        (Task.status_id != 4) &    # если не удалён
         (Task.user_id == current_user.user_id) &
         (Task.task_id == task_data.task_id), Boolean
     )))
@@ -288,7 +288,7 @@ async def update_task(
     if task_data.position_index is not None:
         query = await db.execute(select(func.max(Task.position_index)).where(cast(
             (Task.user_id == current_user.user_id) &
-            (Task.status_id != 3), Boolean
+            (Task.status_id != 4), Boolean
         ))) or 0    # будет 0 если задач нет (такого не должно произойти )
         max_index = query.scalar_one_or_none()
 
@@ -306,7 +306,7 @@ async def update_task(
                     update(Task)
                     .where(
                         (Task.user_id == current_user.user_id) &
-                        (Task.status_id != 3) &              # если не удалён
+                        (Task.status_id != 4) &              # если не удалён
                         (Task.position_index > old_index) &  # > old_index (исключаем сам элемент)
                         (Task.position_index <= new_index)   # <= new_index (включаем новую позицию)
                     ).values(position_index=Task.position_index - 1) # Сдвиг вниз
@@ -317,7 +317,7 @@ async def update_task(
                     update(Task)
                     .where(
                         (Task.user_id == current_user.user_id) &
-                        (Task.status_id != 3) &              # если не удалён
+                        (Task.status_id != 4) &              # если не удалён
                         (Task.position_index >= new_index) & # >= new_index (включаем новую позицию)
                         (Task.position_index < old_index)    # < old_index (исключаем сам элемент)
                     ).values(position_index=Task.position_index + 1) # Сдвиг вверх
@@ -333,10 +333,10 @@ async def update_task(
     task.updated_date = datetime.now(timezone.utc)
 
     if task.desired_completion_date and task.desired_completion_date < datetime.now(timezone.utc):
-        task.status_id = 2  # Просрочен
+        task.status_id = 3  # Просрочен
 
     if task.actual_completion_date:
-        task.status_id = 1 # Завершен
+        task.status_id = 2 # Завершен
 
     await db.commit()
     await db.refresh(task)
@@ -380,17 +380,17 @@ async def delete_project(
     else: # Архивация
         task_update = await db.execute(update(Task).where(cast(
             (Task.project_id == project_id), Boolean)
-        ).values(status_id=3, position_index= -1)  # статус = удалённый
+        ).values(status_id=4, position_index= -1)  # статус = удалённый
         )  # помечаем в БД, что все задач у этого проекта удалены
 
         await db.execute(update(Project).where(cast(
             (Project.project_id == project_id), Boolean)
-        ).values(status_id=3, position_index= -1) # статус = удалённый
+        ).values(status_id=4, position_index= -1) # статус = удалённый
         )  # помечаем в БД, что проект удалён
         msg = "Проект и задачи перемещены в архив"
 
     # Обновление позиций только для активных проектов
-    if old_status_id != 3: # если не удалён (иначе нет необходимости двигать индексы)
+    if old_status_id != 4: # если не удалён (иначе нет необходимости двигать индексы)
         await db.execute(update(Project).where(cast(
             (Project.user_id == current_user.user_id) &
             (Project.position_index > old_position_index), Boolean # проверять на удалённый статус не надо, ибо проекты с ним имеют позицию -1
@@ -435,12 +435,12 @@ async def delete_task(
     else:  # Архивация
         await db.execute(update(Task).where(cast(
             (Task.task_id == task_id), Boolean)
-        ).values(status_id=3, position_index=-1)  # статус = удалённый
+        ).values(status_id=4, position_index=-1)  # статус = удалённый
         )  # помечаем в БД, что задача удалена
         msg = "Задача перемещена в архив"
 
     # Обновление позиций только для активных задач
-    if old_status_id != 3:  # если не удалён (иначе нет необходимости двигать индексы)
+    if old_status_id != 4:  # если не удалён (иначе нет необходимости двигать индексы)
         await db.execute(update(Task).where(cast(
             (Task.user_id == current_user.user_id) &
             (Task.project_id == old_project_id) &
@@ -478,7 +478,7 @@ async def recover_project(
             detail=f"Проект с ID {project_id} не найдена"
         )
 
-    if project.status_id != 3:  # если не является удалённым
+    if project.status_id != 4:  # если не является удалённым
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Проект с ID {project_id} не является удалённым (текущий статус {project.status_id})"
@@ -488,13 +488,13 @@ async def recover_project(
     max_pos_result = await db.execute(
         select(func.max(Project.position_index)).where(cast(
             (Project.user_id == current_user.user_id) &
-            (Project.status_id != 3), Boolean  # Только не удалённые проекты
+            (Project.status_id != 4), Boolean  # Только не удалённые проекты
         ))
     )
     max_position = max_pos_result.scalar_one_or_none() or 0
 
     # Обновляем проект
-    project.status_id = 0  # Возвращаем в статус "активный"
+    project.status_id = 1  # Возвращаем в статус "активный"
     project.position_index = max_position + 1  # Ставим в конец списка
     project.updated_date = datetime.now(timezone.utc)
 
@@ -506,13 +506,13 @@ async def recover_project(
     task_ids = []
     for task in tasks:
         # Устанавливаем базовый статус
-        task.status_id = 0  # Временный статус "активный"
+        task.status_id = 1  # Временный статус "активный"
         task.position_index = task_counter
         task.updated_date = datetime.now(timezone.utc)
 
         # Если есть actual_completion_date - задача завершена
         if task.actual_completion_date:
-            task.status_id = 1
+            task.status_id = 2
 
         task_counter += 1
         task_ids.append(task.task_id)
@@ -524,9 +524,9 @@ async def recover_project(
 
 
     if project.actual_completion_date: # если есть дата завершения
-        project.status_id = 1  # Проект завершен
+        project.status_id = 2  # Проект завершен
 
-    # Проверяем просроченность проекта (автоматически обновит статус на 2 если просрочено)
+    # Проверяем просроченность проекта (автоматически обновит статус на 3 если просрочено)
     new_project = await check_overdue_projects(current_user.user_id, [project_id], db)
 
     return new_project[0]
@@ -550,7 +550,7 @@ async def recover_task(
             detail=f"Задача с ID {task_id} не найдена"
         )
 
-    if task.status_id != 3:  # если не является удалённым
+    if task.status_id != 4:  # если не является удалённым
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Задача с ID {task_id} не является удалённой (текущий статус {task.status_id})"
@@ -560,7 +560,7 @@ async def recover_task(
     max_pos_result = await db.execute(
         select(func.max(Task.position_index)).where(cast(
             (Task.user_id == current_user.user_id) &
-            (Task.status_id != 3), Boolean  # Только не удалённые проекты
+            (Task.status_id != 4), Boolean  # Только не удалённые проекты
         ))
     )
     max_position = max_pos_result.scalar_one_or_none() or 0
@@ -568,9 +568,9 @@ async def recover_task(
     task.position_index = max_position + 1
 
     if task.actual_completion_date: # если есть дата завершения
-        task.status_id = 1  # статус "завершённый"
+        task.status_id = 2  # статус "завершённый"
     else:
-        task.status_id = 0
+        task.status_id = 1
 
     new_task = await check_overdue_tasks(current_user.user_id, [task_id], db) # проверка на просроченность
 

@@ -130,7 +130,7 @@ class TestPostProject:
                                            'position_index': 0,
                                            'title': 'test_title',
                                            'description': 'test_description',
-                                           'status_id': 2, # статус просрочен
+                                           'status_id': 3, # статус просрочен
                                            "desired_completion_date": "2030-05-25T19:00:30.164Z",
                                            "actual_completion_date": "2025-06-28T07:45:39.971Z"
                                            },
@@ -148,7 +148,7 @@ class TestPostProject:
             assert result_db.position_index == 0
             assert result_db.title == 'test_title'
             assert result_db.description == 'test_description'
-            assert result_db.status_id == 1 # мы передали 2(просрочен), но тут должно быть 1(Завершено) т.к. передали дату завершения
+            assert result_db.status_id == 2 # мы передали 3(просрочен), но тут должно быть 2(Завершено) т.к. передали дату завершения
             assert result_db.desired_completion_date == datetime.datetime.fromisoformat(
                 "2030-05-25T19:00:30.164").replace(tzinfo=datetime.timezone.utc)
             assert result_db.actual_completion_date == datetime.datetime.fromisoformat(
@@ -178,7 +178,7 @@ class TestPostProject:
             else:
                 await db_session.refresh(result_db)
                 assert result_db
-                assert result_db.status_id == 3 # статус удалён
+                assert result_db.status_id == 4 # статус удалён
 
     @pytest.mark.asyncio
     async def test_recover_project(self, db_session, create_project):
@@ -188,7 +188,7 @@ class TestPostProject:
         ) as ac:
             await db_session.execute(update(Project).where(cast(
                 (Project.project_id == create_project['project_id']), Boolean)
-                ).values(status_id=3, position_index=-1)  # статус = удалённый
+                ).values(status_id=4, position_index=-1)  # статус = удалённый
                                     )  # помечаем в БД, что проект удален
             await db_session.commit()
 
@@ -202,7 +202,7 @@ class TestPostProject:
             result_db = query.scalar_one_or_none()
 
             assert result_db
-            assert result_db.status_id != 3 # не равен "удалён"
+            assert result_db.status_id != 4 # не равен "удалён"
 
 
 
@@ -217,7 +217,7 @@ class TestPostTask:
                                      json={"project_id": create_project['project_id'],
                                            'title': 'test',
                                            'description': 'test',
-                                           'priority': 0,
+                                           'priority': 1,
                                            "desired_completion_date": "2025-06-26T19:00:30.164Z"},
                                      headers={"Authorization": f"Bearer {create_project['data_user']['access_token']}",
                                               "Content-Type": "application/json"})
@@ -231,7 +231,7 @@ class TestPostTask:
             assert result_db.project_id == result_db.project_id
             assert result_db.title == 'test'
             assert result_db.description == 'test'
-            assert result_db.priority == 0
+            assert result_db.priority == 1
             assert result_db.desired_completion_date == datetime.datetime.fromisoformat(
                 "2025-06-26T19:00:30.164").replace(tzinfo=datetime.timezone.utc)
 
@@ -243,9 +243,9 @@ class TestPostTask:
         ) as ac:
             response = await ac.post("/update_task",
                                      json={"task_id": create_task['task_id'],
-                                           "status_id": 2,
+                                           "status_id": 3,
                                            "position_index": 0,
-                                           "priority": 2,
+                                           "priority": 3,
                                            "title": "test_title",
                                            "description": "test_description",
                                            "desired_completion_date": "2030-05-25T19:00:30.164Z",
@@ -262,9 +262,9 @@ class TestPostTask:
             await db_session.refresh(result_db)
 
             assert result_db
-            assert result_db.status_id == 1  # мы передали 2(просрочен), но тут должно быть 1(Завершено) т.к. передали дату завершения
+            assert result_db.status_id == 2  # мы передали 3(просрочен), но тут должно быть 2(Завершено) т.к. передали дату завершения
             assert result_db.position_index == 0
-            assert result_db.priority == 2
+            assert result_db.priority == 3
             assert result_db.title == 'test_title'
             assert result_db.description == 'test_description'
             assert result_db.desired_completion_date == datetime.datetime.fromisoformat(
@@ -296,7 +296,7 @@ class TestPostTask:
             else:
                 await db_session.refresh(result_db)
                 assert result_db
-                assert result_db.status_id == 3  # статус удалён
+                assert result_db.status_id == 4  # статус удалён
 
     @pytest.mark.asyncio
     async def test_recover_task(self, db_session, create_task):
@@ -306,7 +306,7 @@ class TestPostTask:
         ) as ac:
             await db_session.execute(update(Task).where(cast(
                 (Task.task_id == create_task['task_id']), Boolean)
-            ).values(status_id=3, position_index=-1)  # статус = удалённый
+            ).values(status_id=4, position_index=-1)  # статус = удалённый
                                      )  # помечаем в БД, что проект удален
             await db_session.commit()
 
@@ -321,4 +321,4 @@ class TestPostTask:
             result_db = query.scalar_one_or_none()
 
             assert result_db
-            assert result_db.status_id != 3  # не равен "удалён"
+            assert result_db.status_id != 4  # не равен "удалён"

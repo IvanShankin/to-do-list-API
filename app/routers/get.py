@@ -25,7 +25,7 @@ async def get_project(
     if project_id is None: # если необходимо вернуть все проекты
         result = await db.execute(select(Project).where(cast(
             (Project.user_id == current_user.user_id)
-            & (Project.status_id != 3), Boolean
+            & (Project.status_id != 4), Boolean
         )))
         projects = result.scalars().all()
     else:
@@ -41,7 +41,7 @@ async def get_project(
                 detail=f"Проект с ID {project_id} не найден"
             )
 
-        if project.status_id == 3:
+        if project.status_id == 4:
             raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Проект с ID {project_id} удалён"
@@ -78,7 +78,7 @@ async def get_tasks(
                 detail=f"Задача с ID {task_id} не найден"
             )
 
-        if task.status_id == 3:
+        if task.status_id == 4:
             raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Задача с ID {task_id} удалён"
@@ -88,7 +88,7 @@ async def get_tasks(
         result = await db.execute(select(Task).where(cast(
             (Task.user_id == current_user.user_id) &
             (Task.project_id == project_id) &
-            (Task.status_id != 3), Boolean # если не удален
+            (Task.status_id != 4), Boolean # если не удален
         )))
         tasks = result.scalars().all()
     else: # ничего не передали -> необходимо вернуть все задачи

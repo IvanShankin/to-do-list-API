@@ -104,8 +104,8 @@ async def check_overdue_projects(user_id: int,
             (Project.project_id.in_(projects_id)) &
             (Project.desired_completion_date < now) &
             (Project.actual_completion_date.is_(None)) &
-            (Project.status_id != 2)
-        ).values(status_id=2)) # Установление статуса - просрочен. Обновлять последнее использование не надо!
+            (Project.status_id != 3)
+        ).values(status_id=3)) # Установление статуса - просрочен. Обновлять последнее использование не надо!
 
     #Получаем обновлённые проекты
     result = await db.execute(
@@ -143,8 +143,8 @@ async def check_overdue_tasks(user_id: int,
             (Task.task_id.in_(task_id)) &
             (Task.desired_completion_date < now) &
             (Task.actual_completion_date.is_(None)) &
-            (Task.status_id != 2)
-        ).values(status_id=2)) # Установление статуса - просрочен. Обновлять последнее использование не надо!
+            (Task.status_id != 3)
+        ).values(status_id=3)) # Установление статуса - просрочен. Обновлять последнее использование не надо!
 
     #Получаем обновлённые проекты
     result = await db.execute(

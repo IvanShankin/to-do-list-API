@@ -90,7 +90,7 @@ async def create_project(db_session, create_user)->dict:
 
     query = select(func.max(Project.position_index)).where(cast(
         (Project.user_id == create_user['user_id']) &
-        (Project.status_id != 3), Boolean
+        (Project.status_id != 4), Boolean
     ))
 
     result = await db_session.execute(query)
@@ -100,7 +100,7 @@ async def create_project(db_session, create_user)->dict:
     else:  # если ранее в БД не было задач у этого проекта
         new_position = 0
 
-    status_result = await db_session.execute(select(Status).where(cast(Status.status_id == 0, Boolean)))
+    status_result = await db_session.execute(select(Status).where(cast(Status.status_id == 1, Boolean)))
     status_from_db = status_result.scalar_one_or_none()
 
     created_date = datetime.now(timezone.utc)
@@ -135,7 +135,7 @@ async def create_project(db_session, create_user)->dict:
 async def create_task(db_session, create_user, create_project)->dict:
     result = await db_session.execute(select(func.max(Task.position_index)).where(cast(
         (Task.user_id == create_user['user_id']) &
-        (Task.status_id != 3) &  # если не удалён
+        (Task.status_id != 4) &  # если не удалён
         (Task.project_id == create_project['project_id']),  # ищем по tasks который так же находятся в этом проекте
         Boolean
     )))
@@ -146,7 +146,7 @@ async def create_task(db_session, create_user, create_project)->dict:
     else:  # если ранее в БД не было задач у этого проекта
         new_position = 0
 
-    status_result = await db_session.execute(select(Status).where(cast(Status.status_id == 0, Boolean)))
+    status_result = await db_session.execute(select(Status).where(cast(Status.status_id == 1, Boolean)))
     status_from_db = status_result.scalar_one_or_none()
 
     created_date = datetime.now(timezone.utc)
