@@ -1,1 +1,83 @@
-# test
+name: Start tests and deploy
+
+on: # тут перечисляем триггеры
+  push: # это триггер на команду push (команды могут быть разные)
+    branches: [main] # здесь указывается на какую ветку будет триггер (если не указывать, то будет на главную)
+  commit:
+    branches: [main]
+
+
+jobs: # тут описываются действия которые будут выполнены после срабатывания триггера
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest # операционная система будет создана для тестов
+
+    services: # Добавляем сервис PostgreSQL
+      postgres:
+        image: postgres:13  # Версия PostgreSQL
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 123456789
+          POSTGRES_DB: to_do_list_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          
+    env:
+      MODE: TEST
+      HOST: localhost
+      USER: postgres
+      PASSWORD: 123456789
+      DB_NAME: to_do_list_test
+
+    steps: # это шаги, которые будут происходить при работе
+      - name: Checkout code
+        uses: actions/checkout@v4 # Клонирование репозитория
+
+      - name: Setup Python  # для каждого шага есть своё имя
+        uses: actions/setup-python@v4  # в uses указываются Actions (это готовые workflows, которые были сделаны разработчиками)
+        # ТУТ НЕОБХОДИМО УСТАНОВИТЬ ПАЙТОН В USES
+        with: # тут можно указать версию какую нам необходимо
+          python-version: '3.13' # Конкретная версия Python
+
+      - name: Install requirements
+        run: | # тут необходимые действия с консолью (обновляем pip и устанавливаем зависимости)
+          python -m pip install --upgrade pip 
+          pip install --no-cache-dir -r requirements.txt
+          pip install psycopg2-binary  # Добавляем драйвер PostgreSQL
+
+      - name: Wait for PostgreSQL
+        run: sleep 5  # Даем время PostgreSQL запуститься
+
+      - name: Run tests
+        run: pytest # тут происходят действия с консолью
+
+
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+
+    # это необходимы успешно завершённые job, то есть если 'test' не завершиться успешно, то мы не будем выполнять эту jobs
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          pip install --no-cache-dir -r requirements.txt
+
+      - name: Deploy (example)
+        run: echo "Здесь будет команда деплоя"
+        # Например: rsync, scp или вызов API вашего хостинга
+
