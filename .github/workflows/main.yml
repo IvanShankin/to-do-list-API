@@ -69,13 +69,7 @@ jobs: # тут описываются действия которые будут
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      - name: Login to Docker Hub (если нужен)
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      # Теперь используем docker compose (без дефиса, это современный вариант)
       - name: Build and run containers
         run: |
           docker compose version
